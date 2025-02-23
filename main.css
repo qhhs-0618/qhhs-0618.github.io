@@ -82,7 +82,8 @@ body {
 }
 
 .tool-btn.active {
-    transform: scale(1.1);
+    transform: scale(0.9);
+    transition: transform 0.1s;
     background: rgba(33, 150, 243, 0.15) !important;
     box-shadow: inset 0 0 0 2px var(--primary-color);
 }
@@ -203,11 +204,6 @@ body {
 /* 防止移动端点击高亮 */
 * {
     -webkit-tap-highlight-color: transparent;
-}
-
-.tool-btn:active {
-    transform: scale(0.9);
-    transition: transform 0.1s;
 }
 
 .file-item:active {

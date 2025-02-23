@@ -87,9 +87,9 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     toolbar.querySelector('.drag-handle').addEventListener('touchstart', (e) => {
         isDraggingToolbar = true;
-        const touch = e.touches[0];
-        startX = touch.clientX;
-        startY = touch.clientY;
+        //const touch = e.touches[0];
+        startX = e.clientX;
+        startY = e.clientY;
         initialX = toolbar.offsetLeft;
         initialY = toolbar.offsetTop;
     });
@@ -260,16 +260,19 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // 修改颜色选择器关闭逻辑
-    document.addEventListener('click', (e) => {
-        if (!isTouchDevice && !e.target.closest('.color-palette') && !e.target.closest('[data-tool="draw"]')) {
+    document.querySelectorAll('.color-item').forEach(color => {
+        color.addEventListener('click', (e) => {
+            currentColor = e.target.style.backgroundColor;
+            cursorPreview.style.backgroundColor = currentColor;
             colorPalette.style.display = 'none';
-        }
+        });
     });
-
-    document.addEventListener('touchstart', (e) => {
-        if (isTouchDevice && !e.target.closest('.color-palette') && !e.target.closest('[data-tool="draw"]')) {
+    document.querySelectorAll('.color-item').forEach(color => {
+        color.addEventListener('touchstart', (e) => {
+            currentColor = e.target.style.backgroundColor;
+            cursorPreview.style.backgroundColor = currentColor;
             colorPalette.style.display = 'none';
-        }
+        });
     });
 
     // 工具切换
@@ -302,12 +305,6 @@ document.addEventListener('DOMContentLoaded', () => {
         ctx.putImageData(imageData, canvas.width, canvas.height);
     });
 
-    // 关闭颜色选择器
-    document.addEventListener('click', (e) => {
-        if (!e.target.closest('.color-palette') && !e.target.closest('[data-tool="draw"]')) {
-            colorPalette.style.display = 'none';
-        }
-    });
     initCanvas();
     canvas.style.pointerEvents = 'none';
 });
