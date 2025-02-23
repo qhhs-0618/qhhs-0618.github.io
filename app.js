@@ -4,7 +4,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let isDrawing = false;
     let isDraggingToolbar = false;
     let currentColor = '#000000';
-    let currentTool = 'drag';
+    let currentTool = 'default';
+    const cursorPreview = document.getElementById('cursor-preview');
     const canvas = document.getElementById('draw-canvas');
     const ctx = canvas.getContext('2d');
     
@@ -51,6 +52,27 @@ document.addEventListener('DOMContentLoaded', () => {
         ctx.lineJoin = 'round';
     }
 
+    function setActiveTool(tool) {
+        currentTool = tool === currentTool ? null : tool;
+        document.querySelectorAll('.tool-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.tool === currentTool);
+        });
+        
+        // 更新光标预览
+        cursorPreview.style.display = currentTool ? 'block' : 'none';
+        if (currentTool === 'draw') {
+            cursorPreview.style.backgroundColor = currentColor;
+            cursorPreview.style.borderRadius = '50%';
+            cursorPreview.style.width = '4px';
+            cursorPreview.style.height = '4px';
+        } else if (currentTool === 'erase') {
+            cursorPreview.style.backgroundColor = '#fff';
+            cursorPreview.style.borderRadius = '4px';
+            cursorPreview.style.width = '20px';
+            cursorPreview.style.height = '20px';
+        }
+    }
+
     // 工具栏拖动逻辑
     const toolbar = document.getElementById('toolbar');
     let startX, startY, initialX, initialY;
@@ -95,29 +117,57 @@ document.addEventListener('DOMContentLoaded', () => {
     canvas.addEventListener('mousemove', draw);
     canvas.addEventListener('mouseup', endDrawing);
     canvas.addEventListener('mouseout', endDrawing);
+    document.addEventListener('mousemove', updateCursorPreview);
+
+    function getCanvasPosition(e) {
+        const rect = canvas.getBoundingClientRect();
+        return {
+            x: e.clientX - rect.left,
+            y: e.clientY - rect.top
+        };
+    }
 
     function startDrawing(e) {
         if (currentTool !== 'draw' && currentTool !== 'erase') return;
         isDrawing = true;
+        const pos = getCanvasPosition(e);
         [lastX, lastY] = [e.offsetX, e.offsetY];
         ctx.beginPath();
         ctx.moveTo(lastX, lastY);
+        // 设置绘图参数
+        if (currentTool === 'draw') {
+            ctx.globalCompositeOperation = 'source-over';
+            ctx.strokeStyle = currentColor;
+            ctx.lineWidth = 4;
+        } else {
+            ctx.globalCompositeOperation = 'destination-out';
+            ctx.strokeStyle = 'rgba(0,0,0,1)';
+            ctx.lineWidth = 20;
+        }
     }
 
     function draw(e) {
-        if (!isDrawing) return;
+        if (!isDrawing || !currentTool) return;
+        const pos = getCanvasPosition(e);
         ctx.strokeStyle = currentTool === 'draw' ? currentColor : '#ffffff';
         ctx.lineWidth = currentTool === 'draw' ? 4 : 20;
         ctx.globalCompositeOperation = currentTool === 'draw' ? 'source-over' : 'destination-out';
 
-        ctx.lineTo(e.offsetX, e.offsetY);
+        ctx.lineTo(pos.x, pos.y);
         ctx.stroke();
-        [lastX, lastY] = [e.offsetX, e.offsetY];
+        [lastX, lastY] = [pos.x, pos.y];
     }
 
     function endDrawing() {
-        ctx.closePath();
-        isDrawing = false;
+        if (isDrawing) {
+            ctx.closePath();
+            isDrawing = false;
+        }
+    }
+
+    function updateCursorPreview(e) {
+        if (!currentTool) return;
+        cursorPreview.style.transform = `translate(${e.clientX}px, ${e.clientY}px)`;
     }
 
     // 颜色选择
@@ -125,13 +175,14 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelector('[data-tool="draw"]').addEventListener('contextmenu', (e) => {
         e.preventDefault();
         colorPalette.style.display = 'flex';
-        colorPalette.style.left = `${e.pageX}px`;
-        colorPalette.style.top = `${e.pageY}px`;
+        colorPalette.style.left = `${e.offsetX}px`;
+        colorPalette.style.top = `${e.offsetY}px`;
     });
 
     document.querySelectorAll('.color-item').forEach(color => {
         color.addEventListener('click', (e) => {
             currentColor = e.target.style.backgroundColor;
+            cursorPreview.style.backgroundColor = currentColor;
             colorPalette.style.display = 'none';
         });
     });
@@ -142,6 +193,11 @@ document.addEventListener('DOMContentLoaded', () => {
             document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
             this.classList.add('active');
             currentTool = this.dataset.tool;
+            if (currentTool == 'default') {
+                canvas.style.pointerEvents = 'none';
+            } else {
+                canvas.style.pointerEvents = 'auto';
+            }
             
             // 更新光标样式
             document.body.style.cursor = 
@@ -152,19 +208,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 全屏功能
     document.querySelector('[data-tool="fullscreen"]').addEventListener('click', () => {
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
         if (!document.fullscreenElement) {
             document.documentElement.requestFullscreen();
         } else {
             document.exitFullscreen();
         }
-    });
-
-    // 窗口调整
-    window.addEventListener('resize', () => {
-        initCanvas();
-        if (currentApp) {
-            currentApp.setSize(window.innerWidth, window.innerHeight);
-        }
+        ctx.putImageData(imageData, canvas.width, canvas.height);
     });
 
     // 关闭颜色选择器
@@ -173,4 +223,6 @@ document.addEventListener('DOMContentLoaded', () => {
             colorPalette.style.display = 'none';
         }
     });
+    initCanvas();
+    canvas.style.pointerEvents = 'none';
 });
