@@ -234,8 +234,8 @@ document.addEventListener('DOMContentLoaded', () => {
         document.querySelector('[data-tool="draw"]').addEventListener('contextmenu', (e) => {
             e.preventDefault();
             colorPalette.style.display = 'flex';
-            colorPalette.style.left = `${e.pageX}px`;
-            colorPalette.style.top = `${e.pageY}px`;
+            colorPalette.style.left = `${e.offsetX}px`;
+            colorPalette.style.top = `${e.offsetY}px`;
         });
     }
 
@@ -246,8 +246,8 @@ document.addEventListener('DOMContentLoaded', () => {
             longPressTimer = setTimeout(() => {
                 const touch = e.touches[0];
                 colorPalette.style.display = 'flex';
-                colorPalette.style.left = `${touch.pageX}px`;
-                colorPalette.style.top = `${touch.pageY}px`;
+                colorPalette.style.left = `${touch.offsetX}px`;
+                colorPalette.style.top = `${touch.offsetY}px`;
             }, 500);
         });
         document.querySelector('[data-tool="draw"]').addEventListener('touchend', (e) => {
