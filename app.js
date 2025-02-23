@@ -228,32 +228,48 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 颜色选择
     const colorPalette = document.querySelector('.color-palette');
-    let longPressTimer;
-    document.querySelector('[data-tool="draw"]').addEventListener('touchstart', (e) => {
-        e.preventDefault();
-        longPressTimer = setTimeout(() => {
-            const touch = e.touches[0];
+    let isTouchDevice = 'ontouchstart' in window;
+    // PC端右键菜单
+    if (!isTouchDevice) {
+        document.querySelector('[data-tool="draw"]').addEventListener('contextmenu', (e) => {
+            e.preventDefault();
             colorPalette.style.display = 'flex';
-            colorPalette.style.left = `${touch.pageX}px`;
-            colorPalette.style.top = `${touch.pageY}px`;
-        }, 500);
-    });
-    document.querySelector('[data-tool="draw"]').addEventListener('contextmenu', (e) => {
-        e.preventDefault();
-        colorPalette.style.display = 'flex';
-        colorPalette.style.left = `${e.offsetX}px`;
-        colorPalette.style.top = `${e.offsetY}px`;
-    });
-    document.querySelector('[data-tool="draw"]').addEventListener('touchend', () => {
-        clearTimeout(longPressTimer);
+            colorPalette.style.left = `${e.pageX}px`;
+            colorPalette.style.top = `${e.pageY}px`;
+        });
+    }
+
+    // 移动端长按触发
+    if (isTouchDevice) {
+        let longPressTimer;
+        document.querySelector('[data-tool="draw"]').addEventListener('touchstart', (e) => {
+            longPressTimer = setTimeout(() => {
+                const touch = e.touches[0];
+                colorPalette.style.display = 'flex';
+                colorPalette.style.left = `${touch.pageX}px`;
+                colorPalette.style.top = `${touch.pageY}px`;
+            }, 500);
+        });
+        document.querySelector('[data-tool="draw"]').addEventListener('touchend', (e) => {
+            clearTimeout(longPressTimer);
+        });
+
+        document.querySelector('[data-tool="draw"]').addEventListener('touchmove', (e) => {
+            clearTimeout(longPressTimer);
+        });
+    }
+
+    // 修改颜色选择器关闭逻辑
+    document.addEventListener('click', (e) => {
+        if (!isTouchDevice && !e.target.closest('.color-palette') && !e.target.closest('[data-tool="draw"]')) {
+            colorPalette.style.display = 'none';
+        }
     });
 
-    document.querySelectorAll('.color-item').forEach(color => {
-        color.addEventListener('click', (e) => {
-            currentColor = e.target.style.backgroundColor;
-            cursorPreview.style.backgroundColor = currentColor;
+    document.addEventListener('touchstart', (e) => {
+        if (isTouchDevice && !e.target.closest('.color-palette') && !e.target.closest('[data-tool="draw"]')) {
             colorPalette.style.display = 'none';
-        });
+        }
     });
 
     // 工具切换

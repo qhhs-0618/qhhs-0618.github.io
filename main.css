@@ -214,3 +214,9 @@ body {
     transform: translateY(0) !important;
     transition: none;
 }
+
+@media (hover: hover) and (pointer: fine) {
+    .color-palette {
+        transform: translate(-50%, 10px);
+    }
+}
