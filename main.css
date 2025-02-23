@@ -166,3 +166,51 @@ body {
 .color-item:hover {
     transform: scale(1.1);
 }
+
+/* 移动端适配 */
+@media (max-width: 768px) {
+    #toolbar {
+        top: auto;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        padding: 6px;
+        gap: 4px;
+    }
+
+    .tool-btn {
+        width: 48px;
+        height: 48px;
+        border-radius: 16px;
+    }
+
+    .file-item {
+        padding: 1rem;
+        font-size: 16px;
+    }
+
+    .color-palette {
+        width: 160px;
+        padding: 12px;
+    }
+
+    .color-item {
+        width: 32px;
+        height: 32px;
+    }
+}
+
+/* 防止移动端点击高亮 */
+* {
+    -webkit-tap-highlight-color: transparent;
+}
+
+.tool-btn:active {
+    transform: scale(0.9);
+    transition: transform 0.1s;
+}
+
+.file-item:active {
+    transform: translateY(0) !important;
+    transition: none;
+}

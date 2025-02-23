@@ -36,9 +36,9 @@ document.addEventListener('DOMContentLoaded', () => {
             "filename": `ggb/${filename}`,
             "width": window.innerWidth,
             "height": window.innerHeight,
-            "showMenuBar": false,
-            "showToolBar": false,
-            "enableShiftDragZoom": false
+            "showMenuBar": true,
+            "showToolBar": true,
+            "enableShiftDragZoom": true
         }, true);
         currentApp.inject('ggb-container');
         initCanvas();
@@ -48,6 +48,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function initCanvas() {
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
+        canvas.style.touchAction = 'none';
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
     }
@@ -84,6 +85,14 @@ document.addEventListener('DOMContentLoaded', () => {
         initialX = toolbar.offsetLeft;
         initialY = toolbar.offsetTop;
     });
+    toolbar.querySelector('.drag-handle').addEventListener('touchstart', (e) => {
+        isDraggingToolbar = true;
+        const touch = e.touches[0];
+        startX = touch.clientX;
+        startY = touch.clientY;
+        initialX = toolbar.offsetLeft;
+        initialY = toolbar.offsetTop;
+    });
 
     document.addEventListener('mousemove', (e) => {
         if (!isDraggingToolbar) return;
@@ -100,8 +109,27 @@ document.addEventListener('DOMContentLoaded', () => {
         toolbar.style.left = `${newX}px`;
         toolbar.style.top = `${newY}px`;
     });
+    document.addEventListener('touchmove', (e) => {
+        if (!isDraggingToolbar) return;
+        const touch = e.touches[0];
+        const dx = touch.clientX - startX;
+        const dy = touch.clientY - startY;
+        
+        let newX = initialX + dx;
+        let newY = initialY + dy;
+        
+        // 限制在窗口范围内
+        newX = Math.max(0, Math.min(window.innerWidth - toolbar.offsetWidth, newX));
+        newY = Math.max(0, Math.min(window.innerHeight - toolbar.offsetHeight, newY));
+        
+        toolbar.style.left = `${newX}px`;
+        toolbar.style.top = `${newY}px`;
+    });
 
     document.addEventListener('mouseup', () => {
+        isDraggingToolbar = false;
+    });
+    document.addEventListener('touchend', () => {
         isDraggingToolbar = false;
     });
 
@@ -114,9 +142,28 @@ document.addEventListener('DOMContentLoaded', () => {
     let lastY = 0;
 
     canvas.addEventListener('mousedown', startDrawing);
+    canvas.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        const rect = canvas.getBoundingClientRect();
+        const touch = e.touches[0];
+        startDrawing({
+            offsetX: touch.clientX - rect.left,
+            offsetY: touch.clientY - rect.top
+        });
+    });
     canvas.addEventListener('mousemove', draw);
+    canvas.addEventListener('touchmove', (e) => {
+        e.preventDefault();
+        const rect = canvas.getBoundingClientRect();
+        const touch = e.touches[0];
+        draw({
+            offsetX: touch.clientX - rect.left,
+            offsetY: touch.clientY - rect.top
+        });
+    });
     canvas.addEventListener('mouseup', endDrawing);
-    canvas.addEventListener('mouseout', endDrawing);
+    canvas.addEventListener('touchend', endDrawing);
+    // canvas.addEventListener('mouseout', endDrawing);
     document.addEventListener('mousemove', updateCursorPreview);
 
     function getCanvasPosition(e) {
@@ -148,14 +195,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function draw(e) {
         if (!isDrawing || !currentTool) return;
-        const pos = getCanvasPosition(e);
+        // 获取精确坐标（兼容触摸事件）
+        let x, y;
+        if (e.touches) {
+            const rect = canvas.getBoundingClientRect();
+            x = e.touches[0].clientX - rect.left;
+            y = e.touches[0].clientY - rect.top;
+        } else {
+            x = e.offsetX;
+            y = e.offsetY;
+        }
         ctx.strokeStyle = currentTool === 'draw' ? currentColor : '#ffffff';
         ctx.lineWidth = currentTool === 'draw' ? 4 : 20;
         ctx.globalCompositeOperation = currentTool === 'draw' ? 'source-over' : 'destination-out';
 
-        ctx.lineTo(pos.x, pos.y);
+        ctx.lineTo(x, y);
         ctx.stroke();
-        [lastX, lastY] = [pos.x, pos.y];
+        [lastX, lastY] = [x, y];
     }
 
     function endDrawing() {
@@ -172,11 +228,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 颜色选择
     const colorPalette = document.querySelector('.color-palette');
+    let longPressTimer;
+    document.querySelector('[data-tool="draw"]').addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        longPressTimer = setTimeout(() => {
+            const touch = e.touches[0];
+            colorPalette.style.display = 'flex';
+            colorPalette.style.left = `${touch.pageX}px`;
+            colorPalette.style.top = `${touch.pageY}px`;
+        }, 500);
+    });
     document.querySelector('[data-tool="draw"]').addEventListener('contextmenu', (e) => {
         e.preventDefault();
         colorPalette.style.display = 'flex';
         colorPalette.style.left = `${e.offsetX}px`;
         colorPalette.style.top = `${e.offsetY}px`;
+    });
+    document.querySelector('[data-tool="draw"]').addEventListener('touchend', () => {
+        clearTimeout(longPressTimer);
     });
 
     document.querySelectorAll('.color-item').forEach(color => {
