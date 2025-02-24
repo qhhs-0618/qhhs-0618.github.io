@@ -13,7 +13,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const ggbFiles = [
         '花朵.ggb',
         '蝴蝶.ggb',
-        '回环.ggb'
+        '回环.ggb',
+        '分形.ggb'
     ];
 
     // 初始化文件列表
